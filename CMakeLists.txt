@@ -59,6 +59,7 @@ include(ConfigGBench)
 
 include_directories(~/include)
 include_directories(~/include/ri)
+include_directories(${PROJECT_SOURCE_DIR})
 link_directories(~/lib)
 
 set(SLP_SAMPLING
@@ -176,7 +177,7 @@ else()
 endif()
 
 
-add_executable(improved_grammar_index main.cpp ${SOURCE_FILES} )
+#add_executable(improved_grammar_index main.cpp ${SOURCE_FILES} )
 
 include(internal_utils)
 
@@ -252,11 +253,13 @@ include(internal_utils)
 
 #cxx_executable_with_flags(bench_locate_pattern_len    "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/bench_qgram_locate_pattern_len.cpp ${SLP_SAMPLING})
 #cxx_executable_with_flags(bench_display_pattern_len    "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/bench_qgram_display_pattern_len.cpp ${SLP_SAMPLING} )
-cxx_executable_with_flags(build_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/build_indices.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(process_coll "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/bench_collections.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(locate_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/locate_indices.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(display_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/display_indices.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(space "" "${LIBS};benchmark;sdsl;slp;divsufsort;divsufsort64;cds" bench/bench_space.cpp ${SLP_SAMPLING})
+
+
+#cxx_executable_with_flags(build_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/build_indices.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(process_coll "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/bench_collections.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(locate_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/locate_indices.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(display_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/display_indices.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(space "" "${LIBS};benchmark;sdsl;slp;divsufsort;divsufsort64;cds" bench/bench_space.cpp ${SLP_SAMPLING})
 
 
 
@@ -283,11 +286,11 @@ configure_file(
 )
 
 
-target_link_libraries(improved_grammar_index sdsl)
-target_link_libraries(improved_grammar_index cds)
-target_link_libraries(improved_grammar_index divsufsort)
-target_link_libraries(improved_grammar_index divsufsort64)
-target_link_libraries(improved_grammar_index slp)
+#target_link_libraries(improved_grammar_index sdsl)
+#target_link_libraries(improved_grammar_index cds)
+#target_link_libraries(improved_grammar_index divsufsort)
+#target_link_libraries(improved_grammar_index divsufsort64)
+#target_link_libraries(improved_grammar_index slp)
 
 #target_link_libraries(improved_grammar_index rmqrmmBP)
 #target_link_libraries(improved_grammar_index hsi)
@@ -295,3 +298,51 @@ target_link_libraries(improved_grammar_index slp)
 #target_link_libraries(improved_grammar_index lzend)
 
 
+set(G_INDEX_PTS_SOURCE_FILES
+        utils/Samplings/VByte2.cpp utils/Samplings/VByte2.h
+
+        utils/Utils/deltacodes.cpp utils/Utils/deltacodes.h
+        utils/Utils/offsets.h
+        utils/Utils/SuffixArray.cpp utils/Utils/SuffixArray.h
+        utils/memory/mem_monitor/mem_monitor.hpp
+
+        SelfGrammarIndex.cpp SelfGrammarIndex.h
+        SelfGrammarIndexBS.cpp SelfGrammarIndexBS.h
+        SelfGrammarIndexPT.cpp SelfGrammarIndexPT.h
+        SelfGrammarIndexPTS.cpp SelfGrammarIndexPTS.h
+
+        ################REPAIR FILES#########################
+        utils/repair/arrayG.cpp utils/repair/arrayG.h
+        utils/repair/basics.cpp utils/repair/basics.h
+        utils/repair/dictionary.cpp utils/repair/dictionary.h
+        utils/repair/records.cpp utils/repair/records.h
+        utils/repair/heap.cpp utils/repair/heap.h
+        utils/repair/hash.cpp utils/repair/hash.h
+        utils/repair/RePair.cpp utils/repair/RePair.h
+        utils/build_hyb_lz77.h
+        ################REPAIR FILES#########################
+
+        binary_relation.cpp binary_relation.h
+        compressed_grammar.cpp compressed_grammar.h
+        trees/dfuds_tree.cpp trees/dfuds_tree.h
+        trees/bp_tree.cpp trees/bp_tree.h
+        trees/patricia_tree/compact_patricia_tree.cpp trees/patricia_tree/compact_patricia_tree.h
+        trees/patricia_tree/patricia_tree.cpp trees/patricia_tree/patricia_tree.h
+        trees/patricia_tree/sampled_patrica_tree.h trees/patricia_tree/sampled_patrica_tree.cpp
+        trees/trie/compact_trie.cpp trees/trie/compact_trie.h
+        trees/trie/Trie.cpp trees/trie/Trie.h
+        utils/grammar.cpp utils/grammar.h
+        #        tests/collections.cpp
+        bench/repetitive_collections.h
+        #        SelfGrammarIndexBSQ.cpp SelfGrammarIndexBSQ.h
+        utils/CLogger.cpp utils/CLogger.h
+        )
+
+find_library(GFLAGS_LIB gflags REQUIRED)
+find_package(Threads)
+
+add_executable(bm_build_items bench/bm_build_items.cpp ${G_INDEX_PTS_SOURCE_FILES})
+target_link_libraries(bm_build_items "${GFLAGS_LIB};benchmark;${LIBS};sdsl;divsufsort;divsufsort64;")
+
+add_executable(bm_locate bench/bm_locate.cpp ${G_INDEX_PTS_SOURCE_FILES})
+target_link_libraries(bm_locate "${GFLAGS_LIB};benchmark;${LIBS};sdsl;divsufsort;divsufsort64;")
