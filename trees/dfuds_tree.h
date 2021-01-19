@@ -7,7 +7,7 @@
 
 
 #include <sdsl/int_vector.hpp>
-#include <sdsl/bp_support_sada.hpp>
+#include <sdsl-files/bp_support_sada.hpp>
 #include <sdsl/rrr_vector.hpp>
 
 namespace dfuds {
@@ -17,7 +17,7 @@ namespace dfuds {
 
     public:
         typedef sdsl::bit_vector bv;
-        typedef sdsl::bp_support_sada<> parenthesis_seq;
+        typedef sdsl::updated::bp_support_sada<> parenthesis_seq;
         typedef unsigned int dfuds_long;
 
 

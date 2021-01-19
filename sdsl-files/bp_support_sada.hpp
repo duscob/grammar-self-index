@@ -19,14 +19,14 @@
      parentheses support structure proposed by Kunihiko Sadakane.
     \author Simon Gog
 */
-#ifndef INCLUDED_SDSL_BP_SUPPORT_SADA
-#define INCLUDED_SDSL_BP_SUPPORT_SADA
+#ifndef INCLUDED_SDSL_UPDATED_BP_SUPPORT_SADA
+#define INCLUDED_SDSL_UPDATED_BP_SUPPORT_SADA
 
-#include "int_vector.hpp"
-#include "rank_support.hpp"
-#include "select_support.hpp"
-#include "bp_support_algorithm.hpp"
-#include "fast_cache.hpp"
+#include <sdsl/int_vector.hpp>
+#include <sdsl/rank_support.hpp>
+#include <sdsl/select_support.hpp>
+#include <sdsl/bp_support_algorithm.hpp>
+#include <sdsl/fast_cache.hpp>
 #include <stack>
 #include <map>
 #include <set>
@@ -40,6 +40,8 @@
 namespace sdsl
 {
 
+namespace updated
+{
 //! A class that provides support for bit_vectors that represent a BP sequence.
 /*! This data structure supports the following operations:
  *   - find_open
@@ -947,6 +949,7 @@ private:
         }
 };
 
+}// end namespace
 }// end namespace
 
 
