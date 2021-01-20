@@ -338,6 +338,13 @@ set(G_INDEX_PTS_SOURCE_FILES
         utils/CLogger.cpp utils/CLogger.h
         )
 
+
+
+#TODO Verify these compilation flags
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -fstrict-aliasing -DNDEBUG -march=native -fopenmp")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -ggdb -Ofast -fstrict-aliasing -march=native")
+
 find_library(GFLAGS_LIB gflags REQUIRED)
 find_package(Threads)
 
