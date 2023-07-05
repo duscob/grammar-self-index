@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 project(grammar-self-index)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
@@ -23,9 +23,9 @@ if (GTEST_FOUND)
     set(LIBS ${LIBS} GTest::Main)
 else ()
 
-    if (CMAKE_COMPILER_IS_GNUCXX)
-        add_definitions(-Wall -ansi -Wno-deprecated -pthread)
-    endif ()
+#    if (CMAKE_COMPILER_IS_GNUCXX)
+#        add_definitions(-Wall -ansi -Wno-deprecated -pthread)
+#    endif ()
 
     if (MSVC)
         #vc 2012 fix for vararg templates
@@ -49,13 +49,18 @@ set(BENCHMARK_ENABLE_TESTING OFF)
 
 # c++11 is required
 #
-if ((CMAKE_CXX_COMPILER_ID MATCHES GNU) OR (CMAKE_CXX_COMPILER_ID MATCHES Clang))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    #    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
-    #    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
-endif ()
+#if ((CMAKE_CXX_COMPILER_ID MATCHES GNU) OR (CMAKE_CXX_COMPILER_ID MATCHES Clang))
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+#    #    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
+#    #    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+#endif ()
 
 include(ConfigGBench)
+
+find_package(sdsl 3.0)
+if (NOT sdsl_FOUND)
+    include(ConfigSDSL)
+endif ()
 
 include_directories(~/include)
 include_directories(~/include/ri)
@@ -349,7 +354,7 @@ find_library(GFLAGS_LIB gflags REQUIRED)
 find_package(Threads)
 
 add_executable(bm_build_items bench/bm_build_items.cpp ${G_INDEX_PTS_SOURCE_FILES})
-target_link_libraries(bm_build_items "${GFLAGS_LIB};benchmark;${LIBS};sdsl;divsufsort;divsufsort64;")
+target_link_libraries(bm_build_items "${GFLAGS_LIB};benchmark;${LIBS}")
 
 add_executable(bm_locate bench/bm_locate.cpp ${G_INDEX_PTS_SOURCE_FILES})
-target_link_libraries(bm_locate "${GFLAGS_LIB};benchmark;${LIBS};sdsl;divsufsort;divsufsort64;")
+target_link_libraries(bm_locate "${GFLAGS_LIB};benchmark;${LIBS}")

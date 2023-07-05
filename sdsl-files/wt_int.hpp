@@ -51,6 +51,7 @@ template<class t_bitvector   = bit_vector,
  class wt_int : public sdsl::wt_int<t_bitvector, t_rank, t_select, t_select_zero>
 {
     public:
+        typedef typename sdsl::wt_int<t_bitvector, t_rank, t_select, t_select_zero> base;
 
         typedef typename sdsl::wt_int<t_bitvector, t_rank, t_select, t_select_zero>::size_type              size_type;
         typedef typename sdsl::wt_int<t_bitvector, t_rank, t_select, t_select_zero>::value_type             value_type;
@@ -75,6 +76,10 @@ template<class t_bitvector   = bit_vector,
         template<uint8_t int_width>
         wt_int(int_vector_buffer<int_width>& buf, size_type size,
                uint32_t max_level=0) : sdsl::wt_int<t_bitvector, t_rank, t_select, t_select_zero>(buf, size, max_level) {
+        }
+
+        template <typename t_it>
+        wt_int(t_it begin, t_it end, std::string tmp_dir = ram_file_name("")) : base(begin, end, tmp_dir) {
         }
 
         std::pair<size_type, std::vector<std::pair<value_type, size_type>>>

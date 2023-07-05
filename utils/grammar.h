@@ -9,11 +9,13 @@
 #include <vector>
 #include <map>
 #include <cassert>
-#include "repair/RePair.h"
+
+#include <sdsl/int_vector.hpp>
 #include <sdsl/io.hpp>
+
+#include "repair/RePair.h"
 #include <set>
 #include "../macros.h"
-#include "sdsl/int_vector.hpp"
 
 #ifdef MEM_MONITOR
 #include <ctime>
