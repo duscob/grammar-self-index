@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
   }
 
   // Indexes
-  std::string pts_idx_fn = "pts-idx.gi";
+  std::string pts_idx_fn = "pts-idx_" + FLAGS_data_name + ".gi";
   auto coll_size = filesize(FLAGS_data_dir + "/" + FLAGS_data_name);
 
   std::string index_name = "g-index";

@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <filesystem>
 #include <sys/stat.h>
 
 #include <gflags/gflags.h>
@@ -129,11 +130,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  std::string data_path = FLAGS_data;
-  std::string basics_fn = "basics.gi";
-  std::string repair_fn = "grepair.gi";
-  std::string suffixes_fn = "suffixes.gi";
-  std::string pts_idx_fn = "pts-idx.gi";
+  auto data_path = std::filesystem::path(FLAGS_data);
+  auto data_filename = data_path.filename().string();
+  std::string basics_fn = "basics_" + data_filename + ".gi";
+  std::string repair_fn = "grepair_" + data_filename + ".gi";
+  std::string suffixes_fn = "suffixes_" + data_filename + ".gi";
+  std::string pts_idx_fn = "pts-idx_" + data_filename + ".gi";
 
   if (!file_exists(basics_fn) || FLAGS_rebuild) {
     benchmark::RegisterBenchmark("BuildGIndexPT", BM_BuildGIndexPT, data_path, basics_fn, repair_fn, suffixes_fn);
