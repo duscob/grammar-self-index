@@ -41,12 +41,14 @@ auto BM_BuildGIndexPT = [](benchmark::State &t_state,
                            const auto &t_basics_fn,
                            const auto &t_repair_fn,
                            const auto &t_suffixes_fn) {
+  std::size_t n = 0;
   SelfGrammarIndexBS idx;
   grammar *not_compressed_grammar = nullptr;
   std::vector<std::pair<std::pair<size_t, size_t>, std::pair<size_t, size_t> > > grammar_sfx;
 
   for (auto _ : t_state) {
     std::string data = load_data(t_data_path);
+    n = data.size();
 
     if (not_compressed_grammar != nullptr) { delete not_compressed_grammar; }
     not_compressed_grammar = new grammar();
@@ -87,6 +89,7 @@ auto BM_BuildGIndexPT = [](benchmark::State &t_state,
   }
 
   SetupDefaultCounters(t_state);
+  t_state.counters["n"] = n;
 };
 
 auto BM_BuildGIndexPTS = [](benchmark::State &t_state,
@@ -96,11 +99,13 @@ auto BM_BuildGIndexPTS = [](benchmark::State &t_state,
                             const auto &t_suffixes_fn,
                             const auto &t_pts_idx_fn) {
   std::size_t s = t_state.range(0);
+  std::size_t n = 0;
 
   SelfGrammarIndexPTS idx(s);
 
   for (auto _ : t_state) {
     std::string data = load_data(t_data_path);
+    n = data.size();
 
     std::fstream fbasics(t_basics_fn, std::ios::in | std::ios::binary);
     idx.load_basics(fbasics);
@@ -116,6 +121,8 @@ auto BM_BuildGIndexPTS = [](benchmark::State &t_state,
   idx.save(f_gidx);
 
   SetupDefaultCounters(t_state);
+  t_state.counters["n"] = n;
+  t_state.counters["s"] = s;
 };
 
 inline bool file_exists(const std::string &name);
