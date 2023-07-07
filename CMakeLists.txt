@@ -1,74 +1,67 @@
 cmake_minimum_required(VERSION 3.7)
 project(grammar-self-index)
 
+#Global Setup
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
+
+# Location of internal cmake modules
 set(CMAKE_MODULE_PATH
         ${CMAKE_MODULE_PATH}
         ${PROJECT_SOURCE_DIR}/cmake)
 
 # Guard against in-source builds and bad build-type strings
-#
 include(ConfigSafeGuards)
-#Testing
-include(CTest)
-#set(LIBS string_dictionaries)
-
-find_package(Threads REQUIRED)
-find_package(GTest)
-
-if (GTEST_FOUND)
-    set(LIBS ${LIBS} GTest::Main)
-else ()
-
-#    if (CMAKE_COMPILER_IS_GNUCXX)
-#        add_definitions(-Wall -ansi -Wno-deprecated -pthread)
-#    endif ()
-
-    if (MSVC)
-        #vc 2012 fix for vararg templates
-        set(MSVC_COMPILER_DEFS "-D_VARIADIC_MAX=10")
-    endif ()
-
-    include(ConfigGTest)
-    set(LIBS ${LIBS} gtest gtest_main)
-endif ()
 
 
+# Set common include folder for module
+set(COMMON_INCLUDES
+        ${PROJECT_SOURCE_DIR}/include
+        ${CMAKE_INSTALL_PREFIX}/include
+        ${CMAKE_PREFIX_PATH}/include)
+
+include_directories(${COMMON_INCLUDES})
+include_directories(${PROJECT_SOURCE_DIR})
 
 
-#Benchmark
-# If you want to self-test benchmark lib too, turn me ON
+##Testing
+#include(CTest)
+##set(LIBS string_dictionaries)
 #
-set(BENCHMARK_ENABLE_TESTING OFF)
-
-# Configure google micro benchmark
+#find_package(Threads REQUIRED)
 #
-
-# c++11 is required
-#
-#if ((CMAKE_CXX_COMPILER_ID MATCHES GNU) OR (CMAKE_CXX_COMPILER_ID MATCHES Clang))
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-#    #    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
-#    #    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+#find_package(GTest)
+#if (GTEST_FOUND)
+#    set(LIBS ${LIBS} GTest::Main)
+#else ()
+#    include(ConfigGTest)
+#    set(LIBS ${LIBS} gtest gtest_main)
 #endif ()
 
-include(ConfigGBench)
 
+# Setup dependencies
 find_package(sdsl 3.0)
 if (NOT sdsl_FOUND)
     include(ConfigSDSL)
 endif ()
 
-include(ConfigCDS)
+find_library(CDS_LIB cds)
+if (NOT CDS_LIB)
+    include(ConfigCDS)
+    set(CDS_LIB cds::cds)
+endif ()
+set(LIBS ${LIBS} ${CDS_LIB})
 
-include_directories(~/include)
-include_directories(~/include/ri)
-include_directories(${PROJECT_SOURCE_DIR})
-link_directories(~/lib)
+find_package(benchmark 1.6)
+if (NOT benchmark_FOUND)
+    include(ConfigGBench)
+endif ()
+list(APPEND LIBS benchmark::benchmark benchmark::benchmark_main)
 
+
+# Build targets
 set(SLP_SAMPLING
         utils/Samplings/binarynode.h
         utils/Samplings/CSD.cpp utils/Samplings/CSD.h
@@ -158,36 +151,29 @@ set(SOURCE_FILES
         )
 
 option(USE_MEM_MONITOR "Enter mem-monitor mode" OFF)
-
 if (USE_MEM_MONITOR STREQUAL ON)
     add_definitions(-DMEM_MONITOR)
 else()
     remove_definitions(-DMEM_MONITOR)
 endif()
 
-
 option(USE_PRINT_MODE "Enter print mode" OFF)
-
 if (USE_PRINT_MODE STREQUAL ON)
     add_definitions(-DPRINT_LOGS)
 else()
     remove_definitions(-DPRINT_LOGS)
 endif()
 
-
 option(BUILD_EXTERNAL_INDEXES "Enter print mode" OFF)
-
 if (BUILD_EXTERNAL_INDEXES STREQUAL ON)
     add_definitions(-DBUILD_EXTERNAL_INDEXES)
 else()
     remove_definitions(-DBUILD_EXTERNAL_INDEXES)
 endif()
 
-
 #add_executable(improved_grammar_index main.cpp ${SOURCE_FILES} )
 
 include(internal_utils)
-
 
 #cxx_executable_with_flags(binary_relation_performance "" "${LIBS};benchmark;sdsl;divsufsort;divsufsort64" tests/binary_relation_test.cpp ${SOURCE_FILES})
 #cxx_executable_with_flags(grammar_test "" "${LIBS};benchmark;sdsl;divsufsort;divsufsort64" tests/utils/grammar_test.cpp ${SOURCE_FILES})
@@ -305,6 +291,7 @@ configure_file(
 #target_link_libraries(improved_grammar_index lzend)
 
 
+# Build benchmarks
 set(G_INDEX_PTS_SOURCE_FILES
         utils/Samplings/VByte2.cpp utils/Samplings/VByte2.h
 
@@ -345,8 +332,6 @@ set(G_INDEX_PTS_SOURCE_FILES
         utils/CLogger.cpp utils/CLogger.h
         )
 
-
-
 #TODO Verify these compilation flags
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -fstrict-aliasing -DNDEBUG -march=native -fopenmp")
@@ -356,7 +341,7 @@ find_library(GFLAGS_LIB gflags REQUIRED)
 find_package(Threads)
 
 add_executable(bm_build_items bench/bm_build_items.cpp ${G_INDEX_PTS_SOURCE_FILES})
-target_link_libraries(bm_build_items "${GFLAGS_LIB};benchmark;${LIBS}")
+target_link_libraries(bm_build_items "${GFLAGS_LIB};${LIBS}")
 
 add_executable(bm_locate bench/bm_locate.cpp ${G_INDEX_PTS_SOURCE_FILES})
-target_link_libraries(bm_locate "${GFLAGS_LIB};benchmark;${LIBS}")
+target_link_libraries(bm_locate "${GFLAGS_LIB};${LIBS}")
