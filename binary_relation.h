@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 #include <sdsl/wavelet_trees.hpp>
+#include <sdsl-files/wt_int.hpp>
+#include <sdsl/rrr_vector.hpp>
 #include <fstream>
 
 class binary_relation {
@@ -16,7 +18,7 @@ class binary_relation {
     public:
         unsigned int code{};
         typedef unsigned int bin_long;
-        typedef sdsl::wt_int<> wavelet_tree;
+        typedef sdsl::updated::wt_int<> wavelet_tree;
         //typedef sdsl::wm_int<> wavelet_tree;
         typedef sdsl::rrr_vector<> bin_bit_vector_xb;
         typedef sdsl::rrr_vector<> bin_bit_vector_xa;

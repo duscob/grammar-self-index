@@ -1,66 +1,67 @@
 cmake_minimum_required(VERSION 3.7)
-project(improved_grammar_index)
+project(grammar-self-index)
 
-set(CMAKE_CXX_STANDARD 14)
+#Global Setup
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
+
+# Location of internal cmake modules
 set(CMAKE_MODULE_PATH
         ${CMAKE_MODULE_PATH}
         ${PROJECT_SOURCE_DIR}/cmake)
 
 # Guard against in-source builds and bad build-type strings
-#
 include(ConfigSafeGuards)
-#Testing
-include(CTest)
-#set(LIBS string_dictionaries)
 
-find_package(Threads REQUIRED)
-find_package(GTest)
 
-if (GTEST_FOUND)
-    set(LIBS ${LIBS} GTest::Main)
-else ()
+# Set common include folder for module
+set(COMMON_INCLUDES
+        ${PROJECT_SOURCE_DIR}/include
+        ${CMAKE_INSTALL_PREFIX}/include
+        ${CMAKE_PREFIX_PATH}/include)
 
-    if (CMAKE_COMPILER_IS_GNUCXX)
-        add_definitions(-Wall -ansi -Wno-deprecated -pthread)
-    endif ()
+include_directories(${COMMON_INCLUDES})
+include_directories(${PROJECT_SOURCE_DIR})
 
-    if (MSVC)
-        #vc 2012 fix for vararg templates
-        set(MSVC_COMPILER_DEFS "-D_VARIADIC_MAX=10")
-    endif ()
 
-    include(ConfigGTest)
-    set(LIBS ${LIBS} gtest gtest_main)
+##Testing
+#include(CTest)
+##set(LIBS string_dictionaries)
+#
+#find_package(Threads REQUIRED)
+#
+#find_package(GTest)
+#if (GTEST_FOUND)
+#    set(LIBS ${LIBS} GTest::Main)
+#else ()
+#    include(ConfigGTest)
+#    set(LIBS ${LIBS} gtest gtest_main)
+#endif ()
+
+
+# Setup dependencies
+find_package(sdsl 3.0)
+if (NOT sdsl_FOUND)
+    include(ConfigSDSL)
 endif ()
 
-
-
-
-#Benchmark
-# If you want to self-test benchmark lib too, turn me ON
-#
-set(BENCHMARK_ENABLE_TESTING OFF)
-
-# Configure google micro benchmark
-#
-
-# c++11 is required
-#
-if ((CMAKE_CXX_COMPILER_ID MATCHES GNU) OR (CMAKE_CXX_COMPILER_ID MATCHES Clang))
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    #    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
-    #    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+find_library(CDS_LIB cds)
+if (NOT CDS_LIB)
+    include(ConfigCDS)
+    set(CDS_LIB cds::cds)
 endif ()
+set(LIBS ${LIBS} ${CDS_LIB})
 
-include(ConfigGBench)
+find_package(benchmark 1.6)
+if (NOT benchmark_FOUND)
+    include(ConfigGBench)
+endif ()
+list(APPEND LIBS benchmark::benchmark benchmark::benchmark_main)
 
-include_directories(~/include)
-include_directories(~/include/ri)
-link_directories(~/lib)
 
+# Build targets
 set(SLP_SAMPLING
         utils/Samplings/binarynode.h
         utils/Samplings/CSD.cpp utils/Samplings/CSD.h
@@ -150,36 +151,29 @@ set(SOURCE_FILES
         )
 
 option(USE_MEM_MONITOR "Enter mem-monitor mode" OFF)
-
 if (USE_MEM_MONITOR STREQUAL ON)
     add_definitions(-DMEM_MONITOR)
 else()
     remove_definitions(-DMEM_MONITOR)
 endif()
 
-
 option(USE_PRINT_MODE "Enter print mode" OFF)
-
 if (USE_PRINT_MODE STREQUAL ON)
     add_definitions(-DPRINT_LOGS)
 else()
     remove_definitions(-DPRINT_LOGS)
 endif()
 
-
 option(BUILD_EXTERNAL_INDEXES "Enter print mode" OFF)
-
 if (BUILD_EXTERNAL_INDEXES STREQUAL ON)
     add_definitions(-DBUILD_EXTERNAL_INDEXES)
 else()
     remove_definitions(-DBUILD_EXTERNAL_INDEXES)
 endif()
 
-
-add_executable(improved_grammar_index main.cpp ${SOURCE_FILES} )
+#add_executable(improved_grammar_index main.cpp ${SOURCE_FILES} )
 
 include(internal_utils)
-
 
 #cxx_executable_with_flags(binary_relation_performance "" "${LIBS};benchmark;sdsl;divsufsort;divsufsort64" tests/binary_relation_test.cpp ${SOURCE_FILES})
 #cxx_executable_with_flags(grammar_test "" "${LIBS};benchmark;sdsl;divsufsort;divsufsort64" tests/utils/grammar_test.cpp ${SOURCE_FILES})
@@ -252,11 +246,13 @@ include(internal_utils)
 
 #cxx_executable_with_flags(bench_locate_pattern_len    "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/bench_qgram_locate_pattern_len.cpp ${SLP_SAMPLING})
 #cxx_executable_with_flags(bench_display_pattern_len    "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/bench_qgram_display_pattern_len.cpp ${SLP_SAMPLING} )
-cxx_executable_with_flags(build_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/build_indices.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(process_coll "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/bench_collections.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(locate_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/locate_indices.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(display_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds" bench/display_indices.cpp ${SLP_SAMPLING})
-cxx_executable_with_flags(space "" "${LIBS};benchmark;sdsl;slp;divsufsort;divsufsort64;cds" bench/bench_space.cpp ${SLP_SAMPLING})
+
+
+#cxx_executable_with_flags(build_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds::cds" bench/build_indices.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(process_coll "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds::cds" bench/bench_collections.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(locate_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds::cds" bench/locate_indices.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(display_indices "" "${LIBS};benchmark;slp;sdsl;divsufsort;divsufsort64;cds::cds" bench/display_indices.cpp ${SLP_SAMPLING})
+#cxx_executable_with_flags(space "" "${LIBS};benchmark;sdsl;slp;divsufsort;divsufsort64;cds::cds" bench/bench_space.cpp ${SLP_SAMPLING})
 
 
 
@@ -283,11 +279,11 @@ configure_file(
 )
 
 
-target_link_libraries(improved_grammar_index sdsl)
-target_link_libraries(improved_grammar_index cds)
-target_link_libraries(improved_grammar_index divsufsort)
-target_link_libraries(improved_grammar_index divsufsort64)
-target_link_libraries(improved_grammar_index slp)
+#target_link_libraries(improved_grammar_index sdsl)
+#target_link_libraries(improved_grammar_index cds)
+#target_link_libraries(improved_grammar_index divsufsort)
+#target_link_libraries(improved_grammar_index divsufsort64)
+#target_link_libraries(improved_grammar_index slp)
 
 #target_link_libraries(improved_grammar_index rmqrmmBP)
 #target_link_libraries(improved_grammar_index hsi)
@@ -295,3 +291,57 @@ target_link_libraries(improved_grammar_index slp)
 #target_link_libraries(improved_grammar_index lzend)
 
 
+# Build benchmarks
+set(G_INDEX_PTS_SOURCE_FILES
+        utils/Samplings/VByte2.cpp utils/Samplings/VByte2.h
+
+        utils/Utils/deltacodes.cpp utils/Utils/deltacodes.h
+        utils/Utils/offsets.h
+        utils/Utils/SuffixArray.cpp utils/Utils/SuffixArray.h
+        utils/memory/mem_monitor/mem_monitor.hpp
+
+        SelfGrammarIndex.cpp SelfGrammarIndex.h
+        SelfGrammarIndexBS.cpp SelfGrammarIndexBS.h
+        SelfGrammarIndexPT.cpp SelfGrammarIndexPT.h
+        SelfGrammarIndexPTS.cpp SelfGrammarIndexPTS.h
+
+        ################REPAIR FILES#########################
+        utils/repair/arrayG.cpp utils/repair/arrayG.h
+        utils/repair/basics.cpp utils/repair/basics.h
+        utils/repair/dictionary.cpp utils/repair/dictionary.h
+        utils/repair/records.cpp utils/repair/records.h
+        utils/repair/heap.cpp utils/repair/heap.h
+        utils/repair/hash.cpp utils/repair/hash.h
+        utils/repair/RePair.cpp utils/repair/RePair.h
+        utils/build_hyb_lz77.h
+        ################REPAIR FILES#########################
+
+        binary_relation.cpp binary_relation.h
+        compressed_grammar.cpp compressed_grammar.h
+        trees/dfuds_tree.cpp trees/dfuds_tree.h
+        trees/bp_tree.cpp trees/bp_tree.h
+        trees/patricia_tree/compact_patricia_tree.cpp trees/patricia_tree/compact_patricia_tree.h
+        trees/patricia_tree/patricia_tree.cpp trees/patricia_tree/patricia_tree.h
+        trees/patricia_tree/sampled_patrica_tree.h trees/patricia_tree/sampled_patrica_tree.cpp
+        trees/trie/compact_trie.cpp trees/trie/compact_trie.h
+        trees/trie/Trie.cpp trees/trie/Trie.h
+        utils/grammar.cpp utils/grammar.h
+        #        tests/collections.cpp
+        bench/repetitive_collections.h
+        #        SelfGrammarIndexBSQ.cpp SelfGrammarIndexBSQ.h
+        utils/CLogger.cpp utils/CLogger.h
+        )
+
+#TODO Verify these compilation flags
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -fstrict-aliasing -DNDEBUG -march=native -fopenmp")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -ggdb -Ofast -fstrict-aliasing -march=native")
+
+find_library(GFLAGS_LIB gflags REQUIRED)
+find_package(Threads)
+
+add_executable(bm_build_items bench/bm_build_items.cpp ${G_INDEX_PTS_SOURCE_FILES})
+target_link_libraries(bm_build_items "${GFLAGS_LIB};${LIBS}")
+
+add_executable(bm_locate bench/bm_locate.cpp ${G_INDEX_PTS_SOURCE_FILES})
+target_link_libraries(bm_locate "${GFLAGS_LIB};${LIBS}")

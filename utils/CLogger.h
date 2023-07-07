@@ -12,6 +12,7 @@
 #include <vector>
 #include <time.h>
 #include <unordered_map>
+#include <cstdint>
 
 #define DEBUG_LOG_M 1
 

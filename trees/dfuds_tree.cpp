@@ -15,7 +15,7 @@ void dfuds_tree::build(const sdsl::bit_vector &v) {
         _bv[3+i] = v[i];
     }
     bit_vector = bv(_bv);
-    bps =   sdsl::bp_support_sada<>(&bit_vector);
+    bps =   sdsl::updated::bp_support_sada<>(&bit_vector);
     rank_00 = sdsl::rank_support_v<00,2> (&bit_vector);
     select_00 = sdsl::select_support_mcl<00,2>(&bit_vector);
     select_0  = bv::select_0_type(&bit_vector);
@@ -156,7 +156,7 @@ void dfuds_tree::load(std::fstream& f){
     sdsl::load(select_00,f);
     sdsl::load(select_0,f);
 
-    bps =   sdsl::bp_support_sada<>(&bit_vector);
+    bps =   sdsl::updated::bp_support_sada<>(&bit_vector);
     rank_00 = sdsl::rank_support_v<00,2> (&bit_vector);
     select_00 = sdsl::select_support_mcl<00,2>(&bit_vector);
     select_0  = bv::select_0_type(&bit_vector);
@@ -185,7 +185,7 @@ void dfuds_tree::print() const {
 
 dfuds_tree &dfuds_tree::operator=(const dfuds_tree& T) {
     bit_vector = T.bit_vector;
-    bps =   sdsl::bp_support_sada<>(&bit_vector);
+    bps =   sdsl::updated::bp_support_sada<>(&bit_vector);
     rank_00 = sdsl::rank_support_v<00,2> (&bit_vector);
     select_00 = sdsl::select_support_mcl<00,2>(&bit_vector);
     select_0  = bv::select_0_type(&bit_vector);
