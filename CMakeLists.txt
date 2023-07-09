@@ -17,16 +17,6 @@ set(CMAKE_MODULE_PATH
 include(ConfigSafeGuards)
 
 
-# Set common include folder for module
-set(COMMON_INCLUDES
-        ${PROJECT_SOURCE_DIR}/include
-        ${CMAKE_INSTALL_PREFIX}/include
-        ${CMAKE_PREFIX_PATH}/include)
-
-include_directories(${COMMON_INCLUDES})
-include_directories(${PROJECT_SOURCE_DIR})
-
-
 ##Testing
 #include(CTest)
 ##set(LIBS string_dictionaries)
@@ -60,6 +50,13 @@ if (NOT benchmark_FOUND)
     include(ConfigGBench)
 endif ()
 list(APPEND LIBS benchmark::benchmark benchmark::benchmark_main)
+
+# Set common include folder for module
+set(COMMON_INCLUDES
+        ${PROJECT_SOURCE_DIR}
+        ${CMAKE_INSTALL_PREFIX}/include
+        ${CMAKE_PREFIX_PATH}/include)
+include_directories(${COMMON_INCLUDES})
 
 
 # Build targets
