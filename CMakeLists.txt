@@ -3,6 +3,7 @@ project(grammar-self-index)
 
 #Global Setup
 set(CMAKE_CXX_STANDARD 17)
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
 
@@ -14,16 +15,6 @@ set(CMAKE_MODULE_PATH
 
 # Guard against in-source builds and bad build-type strings
 include(ConfigSafeGuards)
-
-
-# Set common include folder for module
-set(COMMON_INCLUDES
-        ${PROJECT_SOURCE_DIR}/include
-        ${CMAKE_INSTALL_PREFIX}/include
-        ${CMAKE_PREFIX_PATH}/include)
-
-include_directories(${COMMON_INCLUDES})
-include_directories(${PROJECT_SOURCE_DIR})
 
 
 ##Testing
@@ -59,6 +50,13 @@ if (NOT benchmark_FOUND)
     include(ConfigGBench)
 endif ()
 list(APPEND LIBS benchmark::benchmark benchmark::benchmark_main)
+
+# Set common include folder for module
+set(COMMON_INCLUDES
+        ${PROJECT_SOURCE_DIR}
+        ${CMAKE_INSTALL_PREFIX}/include
+        ${CMAKE_PREFIX_PATH}/include)
+include_directories(${COMMON_INCLUDES})
 
 
 # Build targets
@@ -292,6 +290,16 @@ configure_file(
 
 
 # Build benchmarks
+#TODO Verify these compilation flags
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -fstrict-aliasing -DNDEBUG -march=native -fopenmp")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -ggdb -Ofast -fstrict-aliasing -march=native")
+
+# Always link with libstdc++fs.a (std::filesystem) when using GCC 8.
+# Note: This command makes sure that this option comes pretty late on the cmdline.
+link_libraries("$<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:-lstdc++fs>")
+add_link_options(LINKER:--as-needed)
+
 set(G_INDEX_PTS_SOURCE_FILES
         utils/Samplings/VByte2.cpp utils/Samplings/VByte2.h
 
@@ -331,11 +339,6 @@ set(G_INDEX_PTS_SOURCE_FILES
         #        SelfGrammarIndexBSQ.cpp SelfGrammarIndexBSQ.h
         utils/CLogger.cpp utils/CLogger.h
         )
-
-#TODO Verify these compilation flags
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -fstrict-aliasing -DNDEBUG -march=native -fopenmp")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -ggdb -Ofast -fstrict-aliasing -march=native")
 
 find_library(GFLAGS_LIB gflags REQUIRED)
 find_package(Threads)
