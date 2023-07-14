@@ -145,11 +145,11 @@ int main(int argc, char **argv) {
   std::string pts_idx_fn = "pts-idx_" + data_filename + ".gi";
 
   if (!file_exists(basics_fn) || FLAGS_rebuild) {
-    benchmark::RegisterBenchmark("BuildGIndexPT", BM_BuildGIndexPT, data_path, basics_fn, repair_fn, suffixes_fn);
+    benchmark::RegisterBenchmark("G-Index-PT", BM_BuildGIndexPT, data_path, basics_fn, repair_fn, suffixes_fn);
   }
 
   if (!file_exists("16_" + pts_idx_fn) || FLAGS_rebuild) {
-    benchmark::RegisterBenchmark("BuildGIndexPT",
+    benchmark::RegisterBenchmark("G-Index-PT",
                                  BM_BuildGIndexPTS,
                                  data_path,
                                  basics_fn,
