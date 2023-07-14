@@ -340,6 +340,8 @@ set(G_INDEX_PTS_SOURCE_FILES
         utils/CLogger.cpp utils/CLogger.h
         )
 
+include(ConfigSRIBenchmark)
+
 find_library(GFLAGS_LIB gflags REQUIRED)
 find_package(Threads)
 
