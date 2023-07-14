@@ -14,7 +14,8 @@
 #include <SelfGrammarIndexPTS.h>
 
 DEFINE_string(data, "", "Data file. (MANDATORY)");
-DEFINE_bool(rebuild, false, "Rebuild all the items.");
+DEFINE_int32(min_s, 4, "Minimum sampling parameter s.");
+DEFINE_int32(max_s, 2u << 6u, "Maximum sampling parameter s.");
 
 void SetupDefaultCounters(benchmark::State &t_state) {
   t_state.counters["n"] = 0;
@@ -144,12 +145,12 @@ int main(int argc, char **argv) {
   std::string suffixes_fn = "suffixes_" + data_filename + ".gi";
   std::string pts_idx_fn = "pts-idx_" + data_filename + ".gi";
 
-  if (!file_exists(basics_fn) || FLAGS_rebuild) {
-    benchmark::RegisterBenchmark("BuildGIndexPT", BM_BuildGIndexPT, data_path, basics_fn, repair_fn, suffixes_fn);
+  if (!file_exists(basics_fn)) {
+    benchmark::RegisterBenchmark("G-Index-PT", BM_BuildGIndexPT, data_path, basics_fn, repair_fn, suffixes_fn);
   }
 
-  if (!file_exists("16_" + pts_idx_fn) || FLAGS_rebuild) {
-    benchmark::RegisterBenchmark("BuildGIndexPT",
+  if (!file_exists("16_" + pts_idx_fn)) {
+    benchmark::RegisterBenchmark("G-Index-PT",
                                  BM_BuildGIndexPTS,
                                  data_path,
                                  basics_fn,
@@ -157,7 +158,7 @@ int main(int argc, char **argv) {
                                  suffixes_fn,
                                  pts_idx_fn)
         ->RangeMultiplier(2)
-        ->Range(2, 2u << 6u);
+        ->Range(FLAGS_min_s, FLAGS_max_s);
   }
 
   benchmark::Initialize(&argc, argv);
