@@ -12,118 +12,57 @@
 
 #include <SelfGrammarIndexPTS.h>
 
+#include "bm_locate.h"
+
 DEFINE_string(patterns, "", "Patterns file. (MANDATORY)");
 DEFINE_string(data_dir, "./", "Data directory.");
 DEFINE_string(data_name, "data", "Data file basename.");
+
+DEFINE_int32(min_s, 2, "Minimum sampling parameter s.");
+DEFINE_int32(max_s, 32, "Maximum sampling parameter s.");
+
+DEFINE_bool(report_stats, false, "Report statistics for benchmark (mean, median, ...).");
+DEFINE_int32(reps, 10, "Repetitions for the locate query benchmark.");
+DEFINE_double(min_time, 0, "Minimum time (seconds) for the locate query micro benchmark.");
+
 DEFINE_bool(print_result, false, "Execute benchmark that print results per index.");
 
-void SetupDefaultCounters(benchmark::State &t_state) {
-  t_state.counters["Collection_Size(bytes)"] = 0;
-  t_state.counters["Size(bytes)"] = 0;
-  t_state.counters["Bits_x_Symbol"] = 0;
-  t_state.counters["Patterns"] = 0;
-  t_state.counters["Time_x_Pattern"] = 0;
-  t_state.counters["Occurrences"] = 0;
-  t_state.counters["Time_x_Occurrence"] = 0;
-}
-
-// Benchmark Warm-up
-static void BM_WarmUp(benchmark::State &_state) {
-  for (auto _ : _state) {
-    std::vector<int> empty_vector(1000000, 0);
+class Factory {
+ public:
+  Factory(std::string t_idx_dir, const std::string &t_data_name) : idx_dir_{std::move(t_idx_dir)} {
+    idx_suffix_ = "pts-idx_" + t_data_name + ".gi";
   }
 
-  SetupDefaultCounters(_state);
-}
-BENCHMARK(BM_WarmUp);
+  struct Index {
+    std::shared_ptr<SelfGrammarIndexPTS> idx;
+    std::size_t size = 0;
+  };
 
-auto BM_QueryLocate = [](benchmark::State &t_state,
-                         const auto &t_idx_dir,
-                         const auto &t_pts_idx_fn,
-                         const auto &t_patterns,
-                         auto t_seq_size) {
-  std::size_t s = t_state.range(0);
-
-  std::fstream fpts(t_idx_dir + "/" + std::to_string(s) + "_" + t_pts_idx_fn, std::ios::in | std::ios::binary);
-  SelfGrammarIndexPTS idx(s);
-  idx.load(fpts);
-
-  std::size_t total_occs = 0;
-
-  for (auto _ : t_state) {
-    total_occs = 0;
-    for (const auto &pattern: t_patterns) {
-      auto pat = pattern;
-      std::vector<uint> occs;
-
-      idx.locateNoTrie(pat, occs);
-
-      total_occs += occs.size();
+  Index make(std::size_t t_s) {
+    auto it = indexes_.find(t_s);
+    if (it != indexes_.end()) {
+      return it->second;
     }
+
+    Index index;
+    std::fstream fpts(idx_dir_ + "/" + std::to_string(t_s) + "_" + idx_suffix_, std::ios::in | std::ios::binary);
+    index.idx = std::make_shared<SelfGrammarIndexPTS>(t_s);
+    index.idx->load(fpts);
+    index.size = index.idx->size_in_bytes() - index.idx->get_grammar().get_right_trie().size_in_bytes()
+        - index.idx->get_grammar().get_left_trie().size_in_bytes();
+
+    indexes_[t_s] = index;
+
+    return index;
   }
 
-  auto idx_size = idx.size_in_bytes() - idx.get_grammar().get_right_trie().size_in_bytes() - idx.get_grammar().get_left_trie().size_in_bytes();
-  SetupDefaultCounters(t_state);
-  t_state.counters["Collection_Size(bytes)"] = t_seq_size;
-  t_state.counters["Size(bytes)"] = idx_size;
-  t_state.counters["Bits_x_Symbol"] = idx_size * 8.0 / t_seq_size;
-  t_state.counters["Patterns"] = t_patterns.size();
-  t_state.counters["Time_x_Pattern"] = benchmark::Counter(
-      t_patterns.size(), benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert);
-  t_state.counters["Occurrences"] = total_occs;
-  t_state.counters["Time_x_Occurrence"] = benchmark::Counter(
-      total_occs, benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert);
+ private:
+  std::string idx_dir_;
+  std::string idx_suffix_;
+
+  std::map<std::size_t, Index> indexes_;
 };
 
-auto BM_PrintQueryLocate = [](benchmark::State &t_state,
-                              const auto &t_idx_name,
-                              const auto &t_idx_dir,
-                              const auto &t_pts_idx_fn,
-                              const auto &t_patterns,
-                              auto t_seq_size) {
-  std::size_t s = t_state.range(0);
-
-  std::string idx_name = t_idx_name;
-  replace(idx_name.begin(), idx_name.end(), '/', '_');
-  std::string output_filename = "result-" + idx_name + "-" + std::to_string(s) + ".txt";
-
-  std::fstream fpts(t_idx_dir + "/" + std::to_string(s) + "_" + t_pts_idx_fn, std::ios::in | std::ios::binary);
-  SelfGrammarIndexPTS idx(s);
-  idx.load(fpts);
-
-  std::size_t total_occs = 0;
-
-  for (auto _ : t_state) {
-    std::ofstream out(output_filename);
-    total_occs = 0;
-    for (const auto &pattern: t_patterns) {
-      out << pattern << std::endl;
-      auto pat = pattern;
-      std::vector<uint> occs;
-
-      idx.locateNoTrie(pat, occs);
-
-      total_occs += occs.size();
-
-      sort(occs.begin(), occs.end());
-      for (const auto &item  : occs) {
-        out << "  " << item << std::endl;
-      }
-    }
-  }
-
-  auto idx_size = idx.size_in_bytes() - idx.get_grammar().get_right_trie().size_in_bytes() - idx.get_grammar().get_left_trie().size_in_bytes();
-  SetupDefaultCounters(t_state);
-  t_state.counters["Collection_Size(bytes)"] = t_seq_size;
-  t_state.counters["Size(bytes)"] = idx_size;
-  t_state.counters["Bits_x_Symbol"] = idx_size * 8.0 / t_seq_size;
-  t_state.counters["Patterns"] = t_patterns.size();
-  t_state.counters["Time_x_Pattern"] = benchmark::Counter(
-      t_patterns.size(), benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert);
-  t_state.counters["Occurrences"] = total_occs;
-  t_state.counters["Time_x_Occurrence"] = benchmark::Counter(
-      total_occs, benchmark::Counter::kIsIterationInvariantRate | benchmark::Counter::kInvert);
-};
 long filesize(const std::string &t_filename);
 
 int main(int argc, char **argv) {
@@ -136,45 +75,33 @@ int main(int argc, char **argv) {
   }
 
   // Query patterns
-  std::vector<std::string> patterns;
-  {
-    std::ifstream pattern_file(FLAGS_patterns.c_str(), std::ios_base::binary);
-    if (!pattern_file) {
-      std::cerr << "ERROR: Failed to open patterns file!" << std::endl;
-      return 3;
-    }
-
-    std::string buf;
-    while (std::getline(pattern_file, buf)) {
-      if (buf.empty())
-        continue;
-
-      patterns.emplace_back(buf);
-    }
-    pattern_file.close();
-  }
+  auto patterns = ReadPatterns(FLAGS_patterns);
 
   // Indexes
-  std::string pts_idx_fn = "pts-idx_" + FLAGS_data_name + ".gi";
-  auto coll_size = filesize(FLAGS_data_dir + "/" + FLAGS_data_name);
+  auto factory = std::make_shared<Factory>(FLAGS_data_dir, FLAGS_data_name);
+  auto n = filesize(FLAGS_data_dir + "/" + FLAGS_data_name);
 
-  std::string index_name = "g-index";
-  benchmark::RegisterBenchmark(index_name.c_str(), BM_QueryLocate, FLAGS_data_dir, pts_idx_fn, patterns, coll_size)
-      ->RangeMultiplier(2)
-      ->Range(2, 1u << 6u);
+  // Index builder
+  auto make_index = [factory](const auto &tt_state) {
+    auto idx = factory->make(tt_state.range(0));
 
-  std::string print_bm_prefix = "Print-";
-  if (FLAGS_print_result) {
-    auto print_bm_name = print_bm_prefix + index_name;
-    benchmark::RegisterBenchmark(print_bm_name.c_str(),
-                                 BM_PrintQueryLocate,
-                                 index_name,
-                                 FLAGS_data_dir,
-                                 pts_idx_fn,
-                                 patterns,
-                                 coll_size)
-        ->RangeMultiplier(2)
-        ->Range(2, 1u << 6u);
+    auto locate = [idx](auto ttt_pattern) {
+      std::vector<uint> occs;
+      idx.idx->locateNoTrie(ttt_pattern, occs);
+
+      return occs;
+    };
+
+    return std::make_pair(locate, idx.size);
+  };
+
+  LocateBenchmarkConfig locate_bm_config{FLAGS_report_stats, FLAGS_reps, FLAGS_min_time, FLAGS_print_result};
+  // Benchmarks
+  const std::string name = "G-Index";
+  auto bms = RegisterLocateBenchmarks(name, make_index, patterns, n, locate_bm_config, true);
+  // Index with sampling
+  for (auto &bm : bms) {
+    bm.second->RangeMultiplier(2)->Range(FLAGS_min_s, FLAGS_max_s);
   }
 
   benchmark::Initialize(&argc, argv);
