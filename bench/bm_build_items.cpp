@@ -14,7 +14,7 @@
 #include <SelfGrammarIndexPTS.h>
 
 DEFINE_string(data, "", "Data file. (MANDATORY)");
-DEFINE_int32(min_s, 4, "Minimum sampling parameter s.");
+DEFINE_int32(min_s, 2, "Minimum sampling parameter s.");
 DEFINE_int32(max_s, 2u << 6u, "Maximum sampling parameter s.");
 
 void SetupDefaultCounters(benchmark::State &t_state) {
@@ -93,6 +93,8 @@ auto BM_BuildGIndexPT = [](benchmark::State &t_state,
   t_state.counters["n"] = n;
 };
 
+inline bool file_exists(const std::string &name);
+
 auto BM_BuildGIndexPTS = [](benchmark::State &t_state,
                             const auto &t_data_path,
                             const auto &t_basics_fn,
@@ -101,6 +103,12 @@ auto BM_BuildGIndexPTS = [](benchmark::State &t_state,
                             const auto &t_pts_idx_fn) {
   std::size_t s = t_state.range(0);
   std::size_t n = 0;
+
+  auto output_path = std::to_string(s) + "_" + t_pts_idx_fn;
+  if (file_exists(output_path)) {
+    t_state.SkipWithMessage("The index already exists!");
+    return;
+  }
 
   SelfGrammarIndexPTS idx(s);
 
@@ -118,15 +126,13 @@ auto BM_BuildGIndexPTS = [](benchmark::State &t_state,
   }
 
   // Store G-IndexPTS
-  std::fstream f_gidx(std::to_string(s) + "_" + t_pts_idx_fn, std::ios::out | std::ios::binary);
+  std::fstream f_gidx(output_path, std::ios::out | std::ios::binary);
   idx.save(f_gidx);
 
   SetupDefaultCounters(t_state);
   t_state.counters["n"] = n;
   t_state.counters["s"] = s;
 };
-
-inline bool file_exists(const std::string &name);
 
 int main(int argc, char **argv) {
   gflags::SetUsageMessage("This program calculates the ri items for the given text.");
@@ -149,17 +155,15 @@ int main(int argc, char **argv) {
     benchmark::RegisterBenchmark("G-Index-PT", BM_BuildGIndexPT, data_path, basics_fn, repair_fn, suffixes_fn);
   }
 
-  if (!file_exists("16_" + pts_idx_fn)) {
-    benchmark::RegisterBenchmark("G-Index-PT",
-                                 BM_BuildGIndexPTS,
-                                 data_path,
-                                 basics_fn,
-                                 repair_fn,
-                                 suffixes_fn,
-                                 pts_idx_fn)
-        ->RangeMultiplier(2)
-        ->Range(FLAGS_min_s, FLAGS_max_s);
-  }
+  benchmark::RegisterBenchmark("G-Index-PT",
+                               BM_BuildGIndexPTS,
+                               data_path,
+                               basics_fn,
+                               repair_fn,
+                               suffixes_fn,
+                               pts_idx_fn)
+      ->RangeMultiplier(2)
+      ->Range(FLAGS_min_s, FLAGS_max_s);
 
   benchmark::Initialize(&argc, argv);
   benchmark::RunSpecifiedBenchmarks();
