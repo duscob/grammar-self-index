@@ -191,5 +191,9 @@ std::string load_data(const std::string &collection) {
     data.append((char *) buffer, f.gcount());
   }
 
+  if (data.back() == '\0') {
+    data.pop_back();
+  }
+
   return data;
 }
